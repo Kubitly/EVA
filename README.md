@@ -2,7 +2,7 @@
 Executable Visual Architecture
 
 # Description
-Eva is a dynamically typed visual programming language that transpiles to C or Lua.
+Eva is a dynamically typed visual programming language that transpiles down to other language implementations such as C or Lua.
 
 Every part of the code is defined by blocks. The goal is to emphasize the editor itself and allow seamless coding whether using a mouse and keyboard or using a touchscreen device such as a tablet or phone.
 
