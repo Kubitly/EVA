@@ -6,36 +6,18 @@ local subroutine = {}
 
 -------------------------------------------------------------------------------
 
-scope.level=function(block,target,output,stack)
-	local level=0
-	local coordinates=""
-	
-	for i,parent in ipairs(stack) do
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
-		) then
-			level=level+1
-		end
-		
-		if parent.block_type=="static_group" then
-			coordinates=coordinates..("_%d_%d"):format(
-				parent.x,parent.y
-			)
-		end
-	end
-	
-	output[#output+1]=("_%d"):format(level-block.level)
-	output[#output+1]=coordinates
-	
-	if block.next_scope then
-		eva.translate(block.next_scope,target,output,stack)
-	end
+local footer=[[
+if _0_0_1_0 and type(_0_0_1_0)=="function" then
+	_0_0_1_0()
 end
+]]
 
-scope.position=function(block,target,output,stack)
-	output[#output+1]=("_%d_%d"):format(block.x,block.y)
+-------------------------------------------------------------------------------
+
+scope.address=function(block,target,output,stack)
+	for _,i in ipairs(block.address) do
+		output[#output+1]=("_%d"):format(i)
+	end
 	
 	if block.next_scope then
 		eva.translate(block.next_scope,target,output,stack)
@@ -81,19 +63,19 @@ value.table=function(block,target,output,stack)
 end
 
 value.subroutine=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	local coordinates=""
 	
 	for i,parent in ipairs(stack) do
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 		
-		if parent.block_type=="static_group" then
+		if parent.x and parent.y then
 			coordinates=coordinates..("_%d_%d"):format(
 				parent.x,parent.y
 			)
@@ -119,7 +101,6 @@ value.subroutine=function(block,target,output,stack)
 		end
 		
 		for i,block_ in ipairs(arguments) do
-			output[#output+1]=("_%d"):format(level)
 			output[#output+1]=coordinates
 			output[#output+1]=("_%d_%d"):format(block_.x,block_.y)
 			
@@ -156,28 +137,18 @@ static.group=function(block,target,output,stack)
 end
 
 static.variable=function(block,target,output,stack)
-	local level=0
 	local coordinates=""
 	
-	for i,parent in ipairs(stack) do
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
-		) then
-			level=level+1
-		end
-		
-		if parent.block_type=="static_group" then
+	for i,parent in ipairs(stack) do		
+		if parent.x and parent.y then
 			coordinates=coordinates..("_%d_%d"):format(
 				parent.x,parent.y
 			)
 		end
 	end
 	
-	output[#output+1]=("local _%d"):format(level)
+	output[#output+1]="local "
 	output[#output+1]=coordinates
-	output[#output+1]=("_%d_%d"):format(block.x,block.y)
 	
 	if block.value then
 		output[#output+1]="="
@@ -191,45 +162,44 @@ end
 -------------------------------------------------------------------------------
 
 subroutine.variable=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	local coordinates=""
 	
 	for i,parent in ipairs(stack) do
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 		
-		if parent.block_type=="static_group" then
+		if parent.x and parent.y then
 			coordinates=coordinates..("_%d_%d"):format(
 				parent.x,parent.y
 			)
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
-	output[#output+1]=("local _%d"):format(level)
-	output[#output+1]=coordinates
-	output[#output+1]=("_%d_%d\n"):format(block.x,block.y)
+	output[#output+1]=("	"):rep(tabs)
+	output[#output+1]="local "
+	output[#output+1]=coordinates.."\n"
 end
 
 subroutine.set=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="="
 	eva.translate(block.value,target,output,stack)
@@ -237,19 +207,19 @@ subroutine.set=function(block,target,output,stack)
 end
 
 subroutine.allocate=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="={"
 	
@@ -279,30 +249,30 @@ subroutine.allocate=function(block,target,output,stack)
 	
 	if block.size.block_type=="value_variable" then
 		output[#output+1]="}\n"
-		output[#output+1]=("	"):rep(level).."for i="
+		output[#output+1]=("	"):rep(tabs).."for i="
 		eva.translate(block.size,target,output,stack)
 		output[#output+1]=",1,-1 do\n"
-		output[#output+1]=("	"):rep(level+1)
+		output[#output+1]=("	"):rep(tabs+1)
 		eva.translate(block.output,target,output,stack)
 		output[#output+1]="[i]=false\n"
-		output[#output+1]=("	"):rep(level).."end\n"
+		output[#output+1]=("	"):rep(tabs).."end\n"
 	end
 end
 
 subroutine.resize=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	output[#output+1]="for i="
 	output[#output+1]="#"
 	eva.translate(block.output,target,output,stack)
@@ -311,7 +281,7 @@ subroutine.resize=function(block,target,output,stack)
 	output[#output+1]="+1,-1 do "
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="[i]=nil end\n"
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	output[#output+1]="for i=#"
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="+1,"
@@ -322,19 +292,19 @@ subroutine.resize=function(block,target,output,stack)
 end
 
 subroutine.measure=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="=#"
 	eva.translate(block.from,target,output,stack)
@@ -342,19 +312,19 @@ subroutine.measure=function(block,target,output,stack)
 end
 
 subroutine.arithmetic=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="="
 	eva.translate(block.first,target,output,stack)
@@ -364,41 +334,42 @@ subroutine.arithmetic=function(block,target,output,stack)
 end
 
 subroutine.compare=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="="
 	eva.translate(block.first,target,output,stack)
 	output[#output+1]=block.operation
+	:gsub("|"," or "):gsub("&"," and ")
 	eva.translate(block.second,target,output,stack)
 	output[#output+1]="\n"
 end
 
 subroutine.type=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
 	output[#output+1]="=(type("
 	eva.translate(block.from,target,output,stack)
@@ -413,21 +384,21 @@ subroutine.type=function(block,target,output,stack)
 end
 
 subroutine.do_=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
 	stack[#stack]=nil --Temporarily pop current block
 	
-	output[#output+1]=("	"):rep(level-1).."if "
+	output[#output+1]=("	"):rep(tabs-1).."if "
 	eva.translate(block.condition,target,output,stack)
 	output[#output+1]="then\n"
 	
@@ -444,25 +415,25 @@ subroutine.do_=function(block,target,output,stack)
 		eva.translate(block_,target,output,stack)
 	end
 	
-	output[#output+1]=("	"):rep(level-1).."end\n"
+	output[#output+1]=("	"):rep(tabs-1).."end\n"
 end
 
 subroutine.loop=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
 	stack[#stack]=nil
 	
-	output[#output+1]=("	"):rep(level-1).."while "
+	output[#output+1]=("	"):rep(tabs-1).."while "
 	eva.translate(block.condition,target,output,stack)
 	output[#output+1]=" and "
 	eva.translate(block.condition,target,output,stack)
@@ -482,57 +453,57 @@ subroutine.loop=function(block,target,output,stack)
 		eva.translate(block_,target,output,stack)
 	end
 	
-	output[#output+1]=("	"):rep(level-1).."end\n"
+	output[#output+1]=("	"):rep(tabs-1).."end\n"
 end
 
 subroutine.break_=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level).."break\n"
+	output[#output+1]=("	"):rep(tabs).."break\n"
 end
 
 subroutine.return_=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level).."return "
+	output[#output+1]=("	"):rep(tabs).."return "
 	eva.translate(block.value,target,output,stack)
 	output[#output+1]="\n"
 end
 
 subroutine.call=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level)
+	output[#output+1]=("	"):rep(tabs)
 	
 	if block.output.block_type~="value_null" then
 		eva.translate(block.output,target,output,stack)
@@ -554,21 +525,22 @@ subroutine.call=function(block,target,output,stack)
 end
 
 subroutine.inline=function(block,target,output,stack)
-	local level=0
+	local tabs=0
 	
-	for i,parent in ipairs(stack) do
+	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="value_subroutine" or
+			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
 			parent.block_type=="subroutine_loop"
 		) then
-			level=level+1
+			tabs=tabs+1
 		end
 	end
 	
-	output[#output+1]=("	"):rep(level).."do\n"
-	output[#output+1]=("	"):rep(level+1)..block.code.."\n"
-	output[#output+1]=("	"):rep(level).."end\n"
+	output[#output+1]=("	"):rep(tabs).."do\n"
+	output[#output+1]=("	"):rep(tabs+1)
+	output[#output+1]=block.code:gsub("\n","\n"..("	"):rep(tabs+1))
+	output[#output+1]="\n"..("	"):rep(tabs).."end\n"
 end
 
 -------------------------------------------------------------------------------
@@ -579,6 +551,7 @@ return {
 		value      = value,
 		static     = static,
 		subroutine = subroutine
-	}
+	},
+	footer = footer
 }
 end

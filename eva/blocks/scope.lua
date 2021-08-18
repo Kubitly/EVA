@@ -2,21 +2,10 @@ local scope={}
 
 -------------------------------------------------------------------------------
 
-scope.level=function(level,next_scope)
+scope.address=function(address,next_scope)
 	local block={
-		block_type = "scope_level",
-		level      = level,
-		next_scope = next_scope
-	}
-	
-	return block
-end
-
-scope.position=function(x,y,next_scope)
-	local block={
-		block_type = "scope_position",
-		x          = x,
-		y          = y,
+		block_type = "scope_address",
+		address    = address or {},
 		next_scope = next_scope
 	}
 	
@@ -26,7 +15,7 @@ end
 scope.index=function(index,next_scope)
 	local block={
 		block_type = "scope_index",
-		index      = index,       --Can be literal or variable
+		index      = index,
 		next_scope = next_scope
 	}
 	

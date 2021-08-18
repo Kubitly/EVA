@@ -27,7 +27,7 @@ SOFTWARE.
 local cd=(...):gsub("%.init$","")
 
 local eva={
-	version = "0.0.3",
+	version = "0.0.4",
 	blocks  = {},
 	targets = {}
 }
@@ -39,42 +39,18 @@ eva.blocks.value      = require( cd..".blocks.value"      )
 eva.blocks.static     = require( cd..".blocks.static"     )
 eva.blocks.subroutine = require( cd..".blocks.subroutine" )
 
+-------------------------------------------------------------------------------
+
+eva.targets.eva = require( cd..".targets.eva" )(eva)
 eva.targets.lua = require( cd..".targets.lua" )(eva)
 eva.targets.c   = require( cd..".targets.c"   )(eva)
 
 -------------------------------------------------------------------------------
 
-function eva.translate(block,target,output,stack)
-	stack=stack or {}
-	
-	local class,type_=block.block_type:match("(.+)_(.+)")
-	
-	if target.blocks[class][type_] then
-		stack[#stack+1]=block
-		target.blocks[class][type_](block,target,output,stack)
-		stack[#stack]=nil
-	else
-		print(("Warning: %s is not implemented"):format(
-			block.block_type
-		))
-	end
-end
-
-function eva.compile(block,target)
-	local output={}
-	
-	if target.header then
-		output[#output+1]=target.header.."\n"
-	end
-	
-	eva.translate(block,target,output)
-	
-	if target.footer then
-		output[#output+1]="\n"..target.footer.."\n"
-	end
-	
-	return table.concat(output)
-end
+eva.translate = require( cd..".translate" )(eva)
+eva.compile   = require( cd..".compile"   )(eva)
+eva.construct = require( cd..".construct" )(eva)
+eva.parse     = require( cd..".parse"     )(eva)
 
 -------------------------------------------------------------------------------
 
