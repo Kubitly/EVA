@@ -50,6 +50,7 @@ local function get_address_scope(block,address)
 	local scope = eva.blocks.scope.address({
 		block.x,block.y
 	})
+	
 	local next_scope=scope
 	
 	for _,token in ipairs(address.value) do
@@ -71,6 +72,30 @@ local function get_address_scope(block,address)
 	end
 	
 	return scope
+end
+
+local function get_value_block(block,value)
+	if not value then
+		return
+	end
+	
+	if value.token_type=="null" then
+		return eva.blocks.value.null()
+	elseif value.token_type=="number" then
+		return eva.blocks.value.literal(value.value)
+	elseif value.token_type=="table" then
+		local table_block=eva.blocks.value.table()
+		
+		for i,token in ipairs(value.value) do
+			table_block.contents[i]=get_value_block(block,token)
+		end
+		
+		return table_block
+	elseif value.token_type=="address" then
+		return eva.blocks.value.variable(
+			get_address_scope(block,value)
+		)
+	end
 end
 
 -------------------------------------------------------------------------------
@@ -114,24 +139,10 @@ syntax_table["do"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local condition_block
-	
-	if condition.token_type=="number" then
-		condition_block=eva.blocks.value.literal(
-			condition.value
-		)
-	elseif condition.token_type=="address" then
-		condition_block=eva.blocks.value.variable(
-			get_address_scope(block,condition)
-		)
-	elseif condition.token_type=="null" then --Idk why but sure
-		condition_block=eva.blocks.value.null()
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.do_(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		condition_block
+		get_value_block(block,condition)
 	)
 end
 
@@ -147,24 +158,10 @@ syntax_table["loop"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local condition_block
-	
-	if condition.token_type=="number" then
-		condition_block=eva.blocks.value.literal(
-			condition.value
-		)
-	elseif condition.token_type=="address" then
-		condition_block=eva.blocks.value.variable(
-			get_address_scope(block,condition)
-		)
-	elseif condition.token_type=="null" then
-		condition_block=eva.blocks.value.null()
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.loop(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		condition_block
+		get_value_block(block,condition)
 	)
 end
 
@@ -183,49 +180,13 @@ syntax_table["for"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local start_block
-	
-	if start.token_type=="number" then
-		start_block=eva.blocks.value.literal(
-			start.value
-		)
-	elseif start.token_type=="address" then
-		start_block=eva.blocks.value.variable(
-			get_address_scope(block,start)
-		)
-	end
-	
-	local end_block
-	
-	if end_.token_type=="number" then
-		end_block=eva.blocks.value.literal(
-			end_.value
-		)
-	elseif end_.token_type=="address" then
-		end_block=eva.blocks.value.variable(
-			get_address_scope(block,end_)
-		)
-	end
-	
-	local step_block --What are you doing step block!?
-	
-	if step.token_type=="number" then
-		step_block=eva.blocks.value.literal(
-			step.value
-		)
-	elseif step.token_type=="address" then
-		step_block=eva.blocks.value.variable(
-			get_address_scope(block,step)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.for_(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
-		start_block,end_block,step_block
+		get_value_block(block,target),
+		get_value_block(block,start),
+		get_value_block(block,end_),
+		get_value_block(block,step)
 	)
 end
 
@@ -249,6 +210,7 @@ end
 
 syntax_table["variable"]=function(block,statement)
 	local address = statement[1]
+	local value   = statement[3]
 	
 	local parent = get_address_block(
 		block,address.value
@@ -260,7 +222,8 @@ syntax_table["variable"]=function(block,statement)
 	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.variable(
 		address.value[#address.value-1].value,
-		address.value[#address.value].value
+		address.value[#address.value].value,
+		get_value_block(block,value)
 	)
 end
 
@@ -294,25 +257,11 @@ syntax_table["set"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local from_block
-	
-	if from.token_type=="number" then
-		from_block=eva.blocks.value.literal(from.value)
-	elseif from.token_type=="null" then
-		from_block=eva.blocks.value.null()
-	elseif from.token_type=="address" then
-		from_block=eva.blocks.value.variable(
-			get_address_scope(block,from)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.set(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
-		from_block
+		get_value_block(block,target),
+		get_value_block(block,from)
 	)
 end
 
@@ -330,36 +279,12 @@ syntax_table["allocate"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local target_block=eva.blocks.value.variable(
-		get_address_scope(block,target)
-	)
-	local size_block
-	local content_blocks={}
-	
-	if size.token_type=="number" then
-		size_block=eva.blocks.value.literal(size.value)
-	elseif size.token_type=="address" then
-		size_block=eva.blocks.value.variable(
-			get_address_scope(block,size)
-		)
-	end
-	
-	if contents then
-		for _,token in ipairs(contents.value) do
-			if token.token_type=="number" then
-				content_blocks[#content_blocks+1]=eva.blocks.value.literal(
-					token.value
-				)
-			elseif token.token_type=="null" then
-				content_blocks[#content_blocks+1]=eva.blocks.value.null()
-			end
-		end
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.allocate(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		target_block,size_block,content_blocks
+		get_value_block(block,target),
+		get_value_block(block,size),
+		get_value_block(block,contents)
 	)
 end
 
@@ -376,23 +301,11 @@ syntax_table["resize"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local size_block
-	
-	if size.token_type=="number" then
-		size_block=eva.blocks.value.literal(size.value)
-	elseif size.token_type=="address" then
-		size_block=eva.blocks.value.variable(
-			get_address_scope(block,size)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.resize(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
-		size_block
+		get_value_block(block,target),
+		get_value_block(block,size)
 	)
 end
 
@@ -412,12 +325,8 @@ syntax_table["measure"]=function(block,statement)
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.measure(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
-		eva.blocks.value.variable(
-			get_address_scope(block,from)
-		)
+		get_value_block(block,target),
+		get_value_block(block,from)
 	)
 end
 
@@ -436,31 +345,10 @@ syntax_table["arithmetic"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local first_block
-	local second_block
-	
-	if first.token_type=="number" then
-		first_block=eva.blocks.value.literal(first.value)
-	elseif first.token_type=="address" then
-		first_block=eva.blocks.value.variable(
-			get_address_scope(block,first)
-		)
-	end
-	
-	if second.token_type=="number" then
-		second_block=eva.blocks.value.literal(second.value)
-	elseif second.token_type=="address" then
-		second_block=eva.blocks.value.variable(
-			get_address_scope(block,second)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.arithmetic(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
+		get_value_block(block,target),
 		(
 			(operation.value=="add" and "+") or
 			(operation.value=="subtract" and "-") or
@@ -469,7 +357,8 @@ syntax_table["arithmetic"]=function(block,statement)
 			(operation.value=="modulo" and "%") or
 			(operation.value=="power" and "^")
 		),
-		first_block,second_block
+		get_value_block(block,first),
+		get_value_block(block,second)
 	)
 end
 
@@ -488,31 +377,10 @@ syntax_table["compare"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local first_block
-	local second_block
-	
-	if first.token_type=="number" then
-		first_block=eva.blocks.value.literal(first.value)
-	elseif first.token_type=="address" then
-		first_block=eva.blocks.value.variable(
-			get_address_scope(block,first)
-		)
-	end
-	
-	if second.token_type=="number" then
-		second_block=eva.blocks.value.literal(second.value)
-	elseif second.token_type=="address" then
-		second_block=eva.blocks.value.variable(
-			get_address_scope(block,second)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.compare(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
+		get_value_block(block,target),
 		(
 			(operation.value=="or" and "|") or
 			(operation.value=="and" and "&") or
@@ -520,7 +388,8 @@ syntax_table["compare"]=function(block,statement)
 			(operation.value=="less" and "<") or
 			(operation.value=="greater" and ">")
 		),
-		first_block,second_block
+		get_value_block(block,first),
+		get_value_block(block,second)
 	)
 end
 
@@ -537,25 +406,11 @@ syntax_table["type"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local from_block
-	
-	if from.token_type=="number" then
-		from_block=eva.blocks.value.literal(from.value)
-	elseif from.token_type=="null" then
-		from_block=eva.blocks.value.null()
-	elseif from.token_type=="address" then
-		from_block=eva.blocks.value.variable(
-			get_address_scope(block,from)
-		)
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.type(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		eva.blocks.value.variable(
-			get_address_scope(block,target)
-		),
-		from_block
+		get_value_block(block,target),
+		get_value_block(block,from)
 	)
 end
 
@@ -573,42 +428,12 @@ syntax_table["call"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local target_block
-	
-	if target.token_type=="null" then
-		target_block=eva.blocks.value.null()
-	elseif target.token_type=="address" then
-		target_block=eva.blocks.value.variable(
-			get_address_scope(block,target)
-		)
-	end
-	
-	local from_block=eva.blocks.value.variable(
-		get_address_scope(block,from)
-	)
-	
-	local arguments_block={}
-	
-	if arguments then
-		for _,token in ipairs(arguments.value) do
-			if token.token_type=="number" then
-				arguments_block[#arguments_block+1]=eva.blocks.value.literal(
-					token.value
-				)
-			elseif token.token_type=="null" then
-				arguments_block[#arguments_block+1]=eva.blocks.value.null()
-			elseif token.token_type=="address" then
-				arguments_block[#arguments_block+1]=eva.blocks.value.variable(
-					get_address_scope(block,token)
-				)
-			end
-		end
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.call(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		target_block,from_block,arguments_block
+		get_value_block(block,target),
+		get_value_block(block,from),
+		get_value_block(block,arguments)
 	)
 end
 
@@ -624,22 +449,10 @@ syntax_table["return"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	local value_block
-	
-	if value then
-		if value.token_type=="number" then
-			value_block=eva.blocks.value.literal(value.value)
-		elseif value.token_type=="address" then
-			value_block=eva.blocks.value.variable(
-				get_address_scope(block,value)
-			)
-		end
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.return_(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		value_block
+		get_value_block(block,value)
 	)
 end
 

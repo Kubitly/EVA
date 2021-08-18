@@ -68,8 +68,8 @@ value.subroutine=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -154,10 +154,9 @@ static.variable=function(block,target,output,stack)
 	if block.value then
 		output[#output+1]="="
 		eva.translate(block.value,target,output,stack)
-		output[#output+1]="\n"
-	else
-		output[#output+1]="\n"
 	end
+	
+	output[#output+1]="\n"
 end
 
 -------------------------------------------------------------------------------
@@ -168,8 +167,8 @@ subroutine.variable=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -185,7 +184,14 @@ subroutine.variable=function(block,target,output,stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	output[#output+1]="local "
-	output[#output+1]=coordinates.."\n"
+	output[#output+1]=coordinates
+	
+	if block.value then
+		output[#output+1]="="
+		eva.translate(block.value,target,output,stack)
+	end
+	
+	output[#output+1]="\n"
 end
 
 subroutine.set=function(block,target,output,stack)
@@ -193,8 +199,8 @@ subroutine.set=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -214,8 +220,8 @@ subroutine.allocate=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -267,8 +273,8 @@ subroutine.resize=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -300,8 +306,8 @@ subroutine.measure=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -321,8 +327,8 @@ subroutine.arithmetic=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -344,8 +350,8 @@ subroutine.compare=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -368,8 +374,8 @@ subroutine.type=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -396,8 +402,8 @@ subroutine.do_=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -434,8 +440,8 @@ subroutine.loop=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -472,8 +478,8 @@ subroutine.for_=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -514,8 +520,8 @@ subroutine.break_=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -531,8 +537,8 @@ subroutine.return_=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -550,8 +556,8 @@ subroutine.call=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then
@@ -585,8 +591,8 @@ subroutine.inline=function(block,target,output,stack)
 	
 	for i,parent in ipairs(stack) do		
 		if (
-			parent.block_type=="static_group" or
-			parent.block_type=="subroutine_do" or
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
 			parent.block_type=="subroutine_loop" or
 			parent.block_type=="subroutine_for_"
 		) then

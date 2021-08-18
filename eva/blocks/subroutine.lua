@@ -2,11 +2,12 @@ local subroutine={}
 
 -------------------------------------------------------------------------------
 
-subroutine.variable=function(x,y)
+subroutine.variable=function(x,y,value)
 	local block={
 		block_type = "subroutine_variable",
 		x          = x,
-		y          = y
+		y          = y,
+		value      = value
 	}
 	
 	return block
@@ -22,13 +23,13 @@ subroutine.argument=function(x,y) --Basically same as variable
 	return block
 end
 
-subroutine.set=function(x,y,output,value_)
+subroutine.set=function(x,y,output,value)
 	local block={
 		block_type = "subroutine_set",
 		x          = x,
 		y          = y,
 		output     = output,
-		value      = value_
+		value      = value
 	}
 	
 	return block
@@ -160,12 +161,12 @@ subroutine.break_=function(x,y)
 	return block
 end
 
-subroutine.return_=function(x,y,value_)
+subroutine.return_=function(x,y,value)
 	local block={
 		block_type = "subroutine_return_",
 		x          = x,
 		y          = y,
-		value      = value_
+		value      = value
 	}
 	
 	return block

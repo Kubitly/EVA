@@ -13,12 +13,12 @@ static.group=function(x,y,blocks)
 	return block
 end
 
-static.variable=function(x,y,value_)
+static.variable=function(x,y,value)
 	local block={
 		block_type = "static_variable",
 		x          = x,
 		y          = y,
-		value      = value_
+		value      = value
 	}
 	
 	return block
