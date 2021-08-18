@@ -135,6 +135,21 @@ subroutine.loop=function(x,y,condition,operations)
 	return block
 end
 
+subroutine.for_=function(x,y,output,start,end_,step,operations)
+	local block={
+		block_type = "subroutine_for_",
+		x          = x,
+		y          = y,
+		output     = output,
+		start      = start,
+		end_       = end_,
+		step       = step,
+		operations = operations or {}
+	}
+	
+	return block
+end
+
 subroutine.break_=function(x,y)
 	local block={
 		block_type = "subroutine_break_",

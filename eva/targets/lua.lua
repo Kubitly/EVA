@@ -7,8 +7,8 @@ local subroutine = {}
 -------------------------------------------------------------------------------
 
 local footer=[[
-if _0_0_1_0 and type(_0_0_1_0)=="function" then
-	_0_0_1_0()
+if _0_0_0_0 and type(_0_0_0_0)=="function" then
+	_0_0_0_0()
 end
 ]]
 
@@ -70,7 +70,8 @@ value.subroutine=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -169,7 +170,8 @@ subroutine.variable=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -193,7 +195,8 @@ subroutine.set=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -213,7 +216,8 @@ subroutine.allocate=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -248,7 +252,6 @@ subroutine.allocate=function(block,target,output,stack)
 	output[#output+1]="}\n"
 	
 	if block.size.block_type=="value_variable" then
-		output[#output+1]="}\n"
 		output[#output+1]=("	"):rep(tabs).."for i="
 		eva.translate(block.size,target,output,stack)
 		output[#output+1]=",1,-1 do\n"
@@ -266,7 +269,8 @@ subroutine.resize=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -298,7 +302,8 @@ subroutine.measure=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -318,7 +323,8 @@ subroutine.arithmetic=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -340,7 +346,8 @@ subroutine.compare=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -363,7 +370,8 @@ subroutine.type=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -390,7 +398,8 @@ subroutine.do_=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -400,7 +409,9 @@ subroutine.do_=function(block,target,output,stack)
 	
 	output[#output+1]=("	"):rep(tabs-1).."if "
 	eva.translate(block.condition,target,output,stack)
-	output[#output+1]="then\n"
+	output[#output+1]=" and "
+	eva.translate(block.condition,target,output,stack)
+	output[#output+1]="~=0 then\n"
 	
 	stack[#stack+1]=block
 	
@@ -425,7 +436,8 @@ subroutine.loop=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -437,8 +449,49 @@ subroutine.loop=function(block,target,output,stack)
 	eva.translate(block.condition,target,output,stack)
 	output[#output+1]=" and "
 	eva.translate(block.condition,target,output,stack)
-	output[#output+1]="~=0 "
-	output[#output+1]="do\n"
+	output[#output+1]="~=0 do\n"
+	
+	stack[#stack+1]=block
+	
+	table.sort(
+		block.operations,
+		function(a,b)
+			return a.x^2+a.y^2<b.x^2+b.y^2
+		end
+	)
+	
+	for _,block_ in ipairs(block.operations) do
+		eva.translate(block_,target,output,stack)
+	end
+	
+	output[#output+1]=("	"):rep(tabs-1).."end\n"
+end
+
+subroutine.for_=function(block,target,output,stack)
+	local tabs=0
+	
+	for i,parent in ipairs(stack) do		
+		if (
+			parent.block_type=="static_group" or
+			parent.block_type=="subroutine_do" or
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
+		) then
+			tabs=tabs+1
+		end
+	end
+	
+	stack[#stack]=nil
+	
+	output[#output+1]=("	"):rep(tabs-1).."for "
+	eva.translate(block.output,target,output,stack)
+	output[#output+1]="="
+	eva.translate(block.start,target,output,stack)
+	output[#output+1]=","
+	eva.translate(block.end_,target,output,stack)
+	output[#output+1]=","
+	eva.translate(block.step,target,output,stack)
+	output[#output+1]=" do\n"
 	
 	stack[#stack+1]=block
 	
@@ -463,7 +516,8 @@ subroutine.break_=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -479,7 +533,8 @@ subroutine.return_=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -497,7 +552,8 @@ subroutine.call=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end
@@ -531,7 +587,8 @@ subroutine.inline=function(block,target,output,stack)
 		if (
 			parent.block_type=="static_group" or
 			parent.block_type=="subroutine_do" or
-			parent.block_type=="subroutine_loop"
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
 		) then
 			tabs=tabs+1
 		end

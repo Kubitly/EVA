@@ -169,6 +169,8 @@ local function parse(source)
 	local tokens={}
 	
 	for line in string.gmatch(source,"[^\r\n;]+") do
+		line=line:gsub("%-%-(.*)","")
+		
 		local statement={}
 		
 		while #line:gsub("%s","")>0 do

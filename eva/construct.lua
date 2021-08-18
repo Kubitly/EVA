@@ -31,7 +31,8 @@ local function get_address_block(block,address)
 			end
 		elseif (
 			current_block.block_type=="subroutine_do_" or 
-			current_block.block_type=="subroutine_loop"
+			current_block.block_type=="subroutine_loop" or
+			current_block.block_type=="subroutine_for_"
 		) then
 			for _,block_ in ipairs(current_block.operations) do
 				if block_.x==x and block_.y==y then
@@ -164,6 +165,67 @@ syntax_table["loop"]=function(block,statement)
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
 		condition_block
+	)
+end
+
+syntax_table["for"]=function(block,statement)
+	local address = statement[1]
+	local target  = statement[3]
+	local start   = statement[4]
+	local end_    = statement[5]
+	local step    = statement[6]
+	
+	local parent = get_address_block(
+		block,address.value
+	)
+	
+	if parent.block_type=="static_variable" then
+		parent=parent.value
+	end
+	
+	local start_block
+	
+	if start.token_type=="number" then
+		start_block=eva.blocks.value.literal(
+			start.value
+		)
+	elseif start.token_type=="address" then
+		start_block=eva.blocks.value.variable(
+			get_address_scope(block,start)
+		)
+	end
+	
+	local end_block
+	
+	if end_.token_type=="number" then
+		end_block=eva.blocks.value.literal(
+			end_.value
+		)
+	elseif end_.token_type=="address" then
+		end_block=eva.blocks.value.variable(
+			get_address_scope(block,end_)
+		)
+	end
+	
+	local step_block --What are you doing step block!?
+	
+	if step.token_type=="number" then
+		step_block=eva.blocks.value.literal(
+			step.value
+		)
+	elseif step.token_type=="address" then
+		step_block=eva.blocks.value.variable(
+			get_address_scope(block,step)
+		)
+	end
+	
+	parent.operations[#parent.operations+1]=eva.blocks.subroutine.for_(
+		address.value[#address.value-1].value,
+		address.value[#address.value].value,
+		eva.blocks.value.variable(
+			get_address_scope(block,target)
+		),
+		start_block,end_block,step_block
 	)
 end
 
@@ -454,7 +516,7 @@ syntax_table["compare"]=function(block,statement)
 		(
 			(operation.value=="or" and "|") or
 			(operation.value=="and" and "&") or
-			(operation.value=="equal" and "=") or
+			(operation.value=="equal" and "==") or
 			(operation.value=="less" and "<") or
 			(operation.value=="greater" and ">")
 		),
