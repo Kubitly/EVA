@@ -14,6 +14,32 @@ end
 
 -------------------------------------------------------------------------------
 
+local function get_tabs_coordinates(stack)
+	local tabs=0
+	local coordinates=""
+	
+	for i,parent in ipairs(stack) do
+		if (
+			parent.block_type=="value_subroutine" or
+			parent.block_type=="subroutine_do_" or
+			parent.block_type=="subroutine_loop" or
+			parent.block_type=="subroutine_for_"
+		) then
+			tabs=tabs+1
+		end
+		
+		if parent.x and parent.y then
+			coordinates=coordinates..("_%d_%d"):format(
+				parent.x,parent.y
+			)
+		end
+	end
+	
+	return tabs,coordinates
+end
+
+-------------------------------------------------------------------------------
+
 scope.address=function(block,target,output,stack)
 	for _,i in ipairs(block.address) do
 		output[#output+1]=("_%d"):format(i)
@@ -63,25 +89,7 @@ value.table=function(block,target,output,stack)
 end
 
 value.subroutine=function(block,target,output,stack)
-	local tabs=0
-	local coordinates=""
-	
-	for i,parent in ipairs(stack) do
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-		
-		if parent.x and parent.y then
-			coordinates=coordinates..("_%d_%d"):format(
-				parent.x,parent.y
-			)
-		end
-	end
+	local tabs,coordinates=get_tabs_coordinates(stack)
 	
 	table.sort(
 		block.operations,
@@ -162,25 +170,7 @@ end
 -------------------------------------------------------------------------------
 
 subroutine.variable=function(block,target,output,stack)
-	local tabs=0
-	local coordinates=""
-	
-	for i,parent in ipairs(stack) do
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-		
-		if parent.x and parent.y then
-			coordinates=coordinates..("_%d_%d"):format(
-				parent.x,parent.y
-			)
-		end
-	end
+	local tabs,coordinates=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	output[#output+1]="local "
@@ -195,18 +185,7 @@ subroutine.variable=function(block,target,output,stack)
 end
 
 subroutine.set=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -216,18 +195,7 @@ subroutine.set=function(block,target,output,stack)
 end
 
 subroutine.allocate=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -269,18 +237,7 @@ subroutine.allocate=function(block,target,output,stack)
 end
 
 subroutine.resize=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	output[#output+1]="for i="
@@ -302,18 +259,7 @@ subroutine.resize=function(block,target,output,stack)
 end
 
 subroutine.measure=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -323,18 +269,7 @@ subroutine.measure=function(block,target,output,stack)
 end
 
 subroutine.arithmetic=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -346,18 +281,7 @@ subroutine.arithmetic=function(block,target,output,stack)
 end
 
 subroutine.compare=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -370,18 +294,7 @@ subroutine.compare=function(block,target,output,stack)
 end
 
 subroutine.type=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	eva.translate(block.output,target,output,stack)
@@ -398,18 +311,7 @@ subroutine.type=function(block,target,output,stack)
 end
 
 subroutine.do_=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	stack[#stack]=nil --Temporarily pop current block
 	
@@ -436,18 +338,7 @@ subroutine.do_=function(block,target,output,stack)
 end
 
 subroutine.loop=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	stack[#stack]=nil
 	
@@ -474,18 +365,7 @@ subroutine.loop=function(block,target,output,stack)
 end
 
 subroutine.for_=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	stack[#stack]=nil
 	
@@ -516,35 +396,13 @@ subroutine.for_=function(block,target,output,stack)
 end
 
 subroutine.break_=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs).."break\n"
 end
 
 subroutine.return_=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs).."return "
 	eva.translate(block.value,target,output,stack)
@@ -552,18 +410,7 @@ subroutine.return_=function(block,target,output,stack)
 end
 
 subroutine.call=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
-	end
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs)
 	
@@ -587,18 +434,11 @@ subroutine.call=function(block,target,output,stack)
 end
 
 subroutine.inline=function(block,target,output,stack)
-	local tabs=0
-	
-	for i,parent in ipairs(stack) do		
-		if (
-			parent.block_type=="value_subroutine" or
-			parent.block_type=="subroutine_do_" or
-			parent.block_type=="subroutine_loop" or
-			parent.block_type=="subroutine_for_"
-		) then
-			tabs=tabs+1
-		end
+	if block.language~="lua" then
+		return
 	end
+	
+	local tabs=get_tabs_coordinates(stack)
 	
 	output[#output+1]=("	"):rep(tabs).."do\n"
 	output[#output+1]=("	"):rep(tabs+1)

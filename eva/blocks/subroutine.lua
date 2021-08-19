@@ -13,7 +13,7 @@ subroutine.variable=function(x,y,value)
 	return block
 end
 
-subroutine.argument=function(x,y) --Basically same as variable
+subroutine.argument=function(x,y)
 	local block={
 		block_type = "subroutine_argument",
 		x          = x,
@@ -185,11 +185,12 @@ subroutine.call=function(x,y,output,subroutine_,arguments)
 	return block
 end
 
-subroutine.inline=function(x,y,code)
+subroutine.inline=function(x,y,language,code)
 	local block={
 		block_type = "subroutine_inline",
 		x          = x,
 		y          = y,
+		language   = language,
 		code       = code
 	}
 	

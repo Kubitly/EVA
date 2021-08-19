@@ -131,12 +131,12 @@ parse_table[#parse_table+1]=function(line)
 		return
 	end
 	
-	local instruction={
-		token_type = "instruction",
+	local word={
+		token_type = "word",
 		value      = line:match("%a+")
 	}
 	
-	return instruction,line:match("%a+(.*)")
+	return word,line:match("%a+(.*)")
 end
 
 -------------------------------------------------------------------------------

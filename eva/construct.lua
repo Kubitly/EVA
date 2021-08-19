@@ -2,8 +2,6 @@ return function(eva)
 
 -------------------------------------------------------------------------------
 
-local syntax_table={}
-
 local function get_address_block(block,address)
 	local current_block = block
 	
@@ -99,6 +97,8 @@ local function get_value_block(block,value)
 end
 
 -------------------------------------------------------------------------------
+
+local syntax_table={}
 
 syntax_table["group"]=function(block,statement)
 	local address = statement[1]
@@ -457,8 +457,9 @@ syntax_table["return"]=function(block,statement)
 end
 
 syntax_table["inline"]=function(block,statement)
-	local address = statement[1]
-	local code    = statement[3]
+	local address  = statement[1]
+	local language = statement[3]
+	local code     = statement[4]
 	
 	local parent = get_address_block(
 		block,address.value
@@ -468,31 +469,11 @@ syntax_table["inline"]=function(block,statement)
 		parent=parent.value
 	end
 	
-	if code then
-		code=code.value
-		
-		local address_string=("_%d_%d"):format(block.x,block.y)
-		for i=1,#address.value-2 do
-			address_string=address_string..("_%d"):format(
-				address.value[i].value
-			)
-		end
-		
-		while code:match("__%d+,%d+__") do
-			local x=code:match("__(%d+),")
-			local y=code:match(",(%d+)__")
-			
-			code=code:gsub(
-				"__%d+,%d+__",
-				address_string..("_%s_%s"):format(x,y),1
-			)
-		end
-	end
-	
 	parent.operations[#parent.operations+1]=eva.blocks.subroutine.inline(
 		address.value[#address.value-1].value,
 		address.value[#address.value].value,
-		code
+		language and language.value or nil,
+		code and code.value or nil
 	)
 end
 
